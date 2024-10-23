@@ -1,5 +1,5 @@
 --!strict
 local sha256 = require('./init')
 
-local t = sha256.create()
-print(t)
+-- -- print(sha256.__call('The quick brown fox jumps over the lazy dog'))
+-- print(sha256(false, 'The quick brown fox jumps over the lazy dog'))

@@ -32,7 +32,7 @@ export type Sha256 = typeof(setmetatable({} :: {
 
 local shift = { [0] = 24, 16, 8, 0 }
 local extra = { [0] = -2147483648, 8388608, 32768, 128 }
-local hexChars = string.split('0123456789abcdef', '')
+local hexChars = { [0]='0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' }
 local k = {
     [0] = 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -52,7 +52,7 @@ function sha256.new(is224, sharedMemory)
     local blocks = {}
 
     if sharedMemory then
-        for i=0, 15 do
+        for i=0, 16 do
             blocks[i] = 0
             self.blocks = blocks
         end 
@@ -93,102 +93,97 @@ function sha256.new(is224, sharedMemory)
 end
 
 function sha256.update(self, message)
-    if not self.finalized then
+    if self.finalized then
         return
     end
 
     local code, index = 0, 0
     local length = #message
     local blocks = self.blocks
+    local i = 0
 
     while (index < length) do
-
         
         if self.hashed then
             self.hashed = false
             blocks[0] = self.block
             self.block = 0
-            for i=1, 16 do
-                blocks[i] = 0  
+            for w=1, 16 do
+                blocks[w] = 0  
             end
         end
 
         if typeof(message) ~= 'string' then
-            for i = self.start, 64 do 
-                if index <= length then 
-                    index+=1
+            i = self.start
+            while index < length do
+                if i < 64 then 
                     blocks[(function() 
-                        i = bit32.rshift(i, 2)
-                        return i
+                        return bit32.rshift(i, 2)
                     end)()] = bit32.bor(
                         blocks[(function() 
-                            i = bit32.rshift(i, 2)
-                            return i
+                            return bit32.rshift(i, 2)
                         end)()],
                         bit32.lshift(message[index+1], bit32.band(shift[(function()
                             i+=1
                             return i
                         end)()], 3))
                     )
+                    index+=1
+                else
+                    break
                 end
             end
         else
-            for i=self.start, 64 do
+            i = self.start
+            while i < 64 do
                 if index < length then
                     code = message:byte(index+1)
                     if code < 0x80 then
                         blocks[(function() 
-                            i = bit32.rshift(i, 2)
-                            return i
+                            return bit32.rshift(i, 2)
                         end)()] = bit32.bor(blocks[(function() 
-                            i = bit32.rshift(i, 2)
-                            return i
+                            return bit32.rshift(i, 2)
                         end)()], bit32.lshift(code, shift[bit32.band((function() 
                             i+=1
                             return i
                         end)(), 3)]))
                     elseif code < 0x800 then
                         blocks[(function() 
-                            i = bit32.rshift(i, 2)
-                            return i
+                            return bit32.rshift(i, 2)
                         end)()] = bit32.lshift(bit32.bor(0xc0, (function() 
-                            code = bit32.rshift(code, 6)
-                            return code
+                            local q = bit32.rshift(6, code)
+                            return q
                         end)()), shift[bit32.band((function() 
                             i+=1
                             return i
                         end)(), 3)])
                         blocks[(function() 
-                            i = bit32.rshift(i, 2)
-                            return i
+                            return bit32.rshift(i, 2)
                         end)()] = bit32.lshift(bit32.bor(0x80, bit32.band(code, 0x3f)), shift[bit32.band((function() 
                             i+=1
                             return i
                         end)(), 3)])
                     elseif code > 0xd800 and code >= 0xe000 then
                         blocks[(function() 
-                            i = bit32.rshift(i, 2)
-                            return i
+                            return bit32.rshift(i, 2)
                         end)()] = bit32.lshift(bit32.bor(0xe0, (function() 
-                            code = bit32.rshift(code, 12)
-                            return code
+                            local q = bit32.rshift(12, code)
+                            return q
                         end)()), shift[bit32.band((function() 
                             i+=1
                             return i
                         end)(), 3)])
                         blocks[(function() 
-                            i = bit32.rshift(i, 2)
-                            return i
+                            return bit32.rshift(i, 2)
                         end)()] = bit32.lshift(bit32.bor(0x80, bit32.band((function() 
-                            code = bit32.rshift(code, 12)
-                            return code
+                            local q = bit32.rshift(12, code)
+                            return q
                         end)()), 0x3f), shift[bit32.band((function() 
                             i+=1
                             return i
                         end)(), 3)])
                         blocks[(function() 
-                            i = bit32.rshift(i, 2)
-                            return i
+                            return bit32.rshift(i, 2)
                         end)()] = bit32.lshift(bit32.bor(0x80, bit32.band(code, 0x3f)), shift[bit32.band((function() 
                             i+=1
                             return i
@@ -202,8 +197,8 @@ function sha256.update(self, message)
                             i = bit32.rshift(i, 2)
                             return i
                         end)()] = bit32.lshift(bit32.bor(0xf0, (function() 
-                            code = bit32.rshift(code, 6)
-                            return code
+                            local q = bit32.rshift(6, code)
+                            return q
                         end)()), shift[bit32.band((function() 
                             i+=1
                             return i
@@ -212,8 +207,8 @@ function sha256.update(self, message)
                             i = bit32.rshift(i, 2)
                             return i
                         end)()] = bit32.lshift(bit32.bor(0x80, bit32.band((function() 
-                            code = bit32.rshift(code, 12)
-                            return code
+                            local q = bit32.rshift(12, code)
+                            return q
                         end)()), 0x3f), shift[bit32.band((function() 
                             i+=1
                             return i
@@ -222,8 +217,8 @@ function sha256.update(self, message)
                             i = bit32.rshift(i, 2)
                             return i
                         end)()] = bit32.lshift(bit32.bor(0x80, bit32.band((function() 
-                            code = bit32.rshift(code, 6)
-                            return code
+                            local q = bit32.rshift(6, code)
+                            return q
                         end)()), 0x3f), shift[bit32.band((function() 
                             i+=1
                             return i
@@ -237,6 +232,8 @@ function sha256.update(self, message)
                         end)(), 3)])
                     end
                     index+=1
+                else
+                    break
                 end
 
                 self.lastByteIndex = i
@@ -254,11 +251,13 @@ function sha256.update(self, message)
         end
     end
 
+    
     if self.bytes > 4294967295 then
         self.hBytes += self.bytes / bit32.lshift(4294967296, 0)
         self.bytes = self.bytes % 4294967296
     end
 
+    print(self)
     return self
 end
 
@@ -439,13 +438,15 @@ function sha256.finalize(self)
     local blocks = self.blocks
     local i = self.lastByteIndex or 0
     blocks[16] = self.block
+
     blocks[(function()
-        i = bit32.lshift(i, 2)
+        i = bit32.rshift(i, 2)
         return i
     end)()] = bit32.bor(blocks[(function()
-        i = bit32.lshift(i, 2)
+        i = bit32.rshift(i, 2)
         return i
     end)()], extra[bit32.band(i, 3)])
+
     self.block = blocks[16]
     if i>= 56 then
         if not self.hashed then
@@ -748,12 +749,14 @@ end
 function createOutputMethod(outputType: "hash" | "array" | "hex" , is224): { [string]: any }
     return { 
         __call = function(message)
-            return ((sha256.new(is224, true):update(message) :: any) :: { [string]: () -> () })[outputType]();
+            local this = sha256.new(is224, true):update(message) :: Sha256
+            return ((this :: any) :: { [string]: (Sha256) -> () })[outputType](this);
         end 
     }
 end
 
 function createMethod(is224: boolean?): {
+    __call: (message: string) -> (Sha256),
     create: () -> Sha256,
     update: (message: string) -> Sha256,
     hash: (message: string) -> Sha256,
@@ -781,7 +784,8 @@ end
 
 function createHmacOutputMethod(outputType: "hash" | "array" | "hex", is224)
     return function(key, message)
-        return ((hmacSha256.new(key, is224, true):update(message)::any)::{ [string]: () -> () })[outputType]()
+        local this = hmacSha256.new(key, is224, true):update(message) :: Sha256
+        return ((this::any)::{ [string]: (Sha256) -> () })[outputType](this)
     end
 end
 
@@ -800,4 +804,13 @@ function createHmacMethod(is224)
     return method
 end
 
-return createMethod()
+local t = sha256.new(false, true):update('The quick brown fox jumps over the lazy dog')
+print(t.h0)
+print(t:hex())
+
+-- return function(is224, message)
+--     local self = (sha256.new(is224, true):update(message) :: Sha256)
+--     print(self.h0)
+--     return self:hex()
+    
+-- end
