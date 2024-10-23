@@ -1,11 +1,12 @@
 --!strict
 type Sha256Impl = {
     __index: Sha256Impl,
-    new: (is224: boolean, sharedMemory: boolean) -> Sha256,
+    new: (is224: boolean?, sharedMemory: boolean?) -> Sha256,
     update: (self: Sha256, message: string | { [any]: any }) -> Sha256?,
     hash: (self: Sha256) -> (),
     finalize: (self: Sha256) -> (),
     array: (self: Sha256) -> { [number]: number },
+    hex: (self: Sha256) -> string
 }
 
 export type Sha256 = typeof(setmetatable({} :: {
@@ -25,12 +26,13 @@ export type Sha256 = typeof(setmetatable({} :: {
     finalized: boolean,
     hashed: boolean,
     first: boolean,
-    is224: boolean,
+    is224: boolean?,
     lastByteIndex: number?,
 }, {} :: Sha256Impl))
 
 local shift = { [0] = 24, 16, 8, 0 }
 local extra = { [0] = -2147483648, 8388608, 32768, 128 }
+local hexChars = string.split('0123456789abcdef', '')
 local k = {
     [0] = 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -585,4 +587,217 @@ function sha256.array(self)
     return arr
 end
 
-return sha256
+function sha256.hex(self)
+    self:finalize()
+    local h0 = self.h0
+    local h1 = self.h1
+    local h2 = self.h2
+    local h3 = self.h3
+    local h4 = self.h4
+    local h5 = self.h5
+    local h6 = self.h6
+    local h7 = self.h7
+    
+    local hex = hexChars[bit32.band(bit32.rshift(h0, 28), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h0, 24), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h0, 20), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h0, 16), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h0, 12), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h0, 8), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h0, 4), 0x0F)] .. hexChars[bit32.band(h0, 0x0F)] ..hexChars[bit32.band(bit32.rshift(h1, 28), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h1, 24), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h1, 20), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h1, 16), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h1, 12), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h1, 8), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h1, 4), 0x0F)] .. hexChars[bit32.band(h1, 0x0F)] ..hexChars[bit32.band(bit32.rshift(h2, 28), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h2, 24), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h2, 20), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h2, 16), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h2, 12), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h2, 8), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h2, 4), 0x0F)] .. hexChars[bit32.band(h2, 0x0F)] ..hexChars[bit32.band(bit32.rshift(h3, 28), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h3, 24), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h3, 20), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h3, 16), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h3, 12), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h3, 8), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h3, 4), 0x0F)] .. hexChars[bit32.band(h3, 0x0F)] ..hexChars[bit32.band(bit32.rshift(h4, 28), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h4, 24), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h4, 20), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h4, 16), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h4, 12), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h4, 8), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h4, 4), 0x0F)] .. hexChars[bit32.band(h4, 0x0F)] ..hexChars[bit32.band(bit32.rshift(h5, 28), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h5, 24), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h5, 20), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h5, 16), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h5, 12), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h5, 8), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h5, 4), 0x0F)] .. hexChars[bit32.band(h5, 0x0F)] ..hexChars[bit32.band(bit32.rshift(h6, 28), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h6, 24), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h6, 20), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h6, 16), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h6, 12), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h6, 8), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h6, 4), 0x0F)] .. hexChars[bit32.band(h6, 0x0F)]
+
+    if not self.is224 then
+        hex ..= hexChars[bit32.band(bit32.rshift(h7, 28), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h7, 24), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h7, 20), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h7, 16), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h7, 12), 0x0F)] .. hexChars[bit32.band(bit32.rshift(h7, 8), 0x0F)] ..hexChars[bit32.band(bit32.rshift(h7, 4), 0x0F)] .. hexChars[bit32.band(h7, 0x0F)]
+    end
+
+    return hex
+end
+
+type HmacSha256Impl = {
+    __index: HmacSha256Impl,
+    new: (key: string | { [any]: any }, is224: boolean, sharedMemory: boolean?) -> HmacSha256,
+    finalize: (self: HmacSha256) -> (),
+}
+
+export type HmacSha256 = Sha256 & typeof(setmetatable({} :: {
+    oKeyPad: { [number]: number },
+    inner: boolean,
+    sharedMemorey: boolean,
+}, {} :: HmacSha256Impl))
+
+local hmacSha256 = {} :: HmacSha256Impl
+hmacSha256.__index = hmacSha256
+
+function hmacSha256.new(key, is224, sharedMemory)
+    local i= 0
+    if typeof(key) == 'string' then
+        local bytes = {}
+        local length = #key
+        local index = 0
+        local code
+
+        i=0
+        while i < length do
+            code = key:byte(i)
+            if code < 0x80 then
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = code
+            elseif code < 0x800 then
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = bit32.bor(0xc0, (function() 
+                    code = bit32.rshift(code, 6)
+                    return code
+                end)())
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = bit32.bor(0x80, bit32.band(code, 0x3f))
+            elseif code < 0xD800 or code >= 0xE000 then
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = bit32.bor(0xe0, (function() 
+                    code = bit32.rshift(code, 12)
+                    return code
+                end)())
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = bit32.bor(0x80, bit32.band((function() 
+                    code = bit32.rshift(code, 6)
+                    return code
+                end)(), 0x3f))
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = bit32.bor(0x80, bit32.band(code, 0x3f))
+            else
+                code = 0x10000 + bit32.bor(bit32.lshift(bit32.band(code, 0x3ff), 10), bit32.band(key:byte((function()
+                    index+=1
+                    return index
+                end)()), 0x3ff))
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = bit32.bor(0xf0, (function() 
+                    code = bit32.rshift(code, 18)
+                    return code
+                end)())
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = bit32.bor(0x80, bit32.band((function() 
+                    code = bit32.rshift(code, 12)
+                    return code
+                end)(), 0x3f))
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = bit32.bor(0x80, bit32.band((function() 
+                    code = bit32.rshift(code, 6)
+                    return code
+                end)(), 0x3f))
+                bytes[(function() 
+                    index+=1
+                    return index 
+                end)()] = bit32.bor(0x80, bit32.band(code, 0x3f))
+            end
+            i +=1
+        end
+        key = bytes
+    end
+
+    if #key > 64 then
+        key = (sha256.new(is224, true):update(key) :: Sha256):array()
+    end
+
+    local oKeyPad = {}
+    local iKeyPad = {}
+
+    i=0
+    while i < 64 do
+        local b: number
+        if typeof(key) == 'string' then
+            b = tonumber(key:sub(i+1, i+1)) or 0
+        elseif typeof(key) == 'table' then
+            b = key[i]
+        end
+        oKeyPad[i] = 0x5c ^ b
+        iKeyPad[i] = 0x36 ^ b
+        i += 1
+    end
+
+    local self = sha256.new(is224, sharedMemory) :: HmacSha256
+    self:update(iKeyPad)
+    self.oKeyPad = oKeyPad
+    self.inner = true
+    self.sharedMemorey = sharedMemory or false
+
+    return self
+end
+
+function hmacSha256.finalize(self)
+    sha256.finalize(self)
+    if self.inner then
+        self.inner = false
+        local innerHash = self:array()
+        self:update(self.oKeyPad)
+        self:update(innerHash)
+        self:finalize()
+    end
+end
+
+function createOutputMethod(outputType: "hash" | "array" | "hex" , is224): { [string]: any }
+    return { 
+        __call = function(message)
+            return ((sha256.new(is224, true):update(message) :: any) :: { [string]: () -> () })[outputType]();
+        end 
+    }
+end
+
+function createMethod(is224: boolean?): {
+    create: () -> Sha256,
+    update: (message: string) -> Sha256,
+    hash: (message: string) -> Sha256,
+    array: (message: string) -> Sha256,
+    hex: (message: string) -> Sha256,
+}
+    local method = createOutputMethod("hex", is224)
+    method.create = function() 
+        return sha256.new(is224)
+    end
+    method.update = function(message)
+        return method.create().update(message)
+    end
+    method['hash'] = function(message)
+        return ((sha256.new(is224, true):update(message) :: any) :: { [string]: () -> () })['hash']();
+    end 
+    method['array'] = function(message)
+        return ((sha256.new(is224, true):update(message) :: any) :: { [string]: () -> () })['array']();
+    end 
+    method['hex'] = function(message)
+        return ((sha256.new(is224, true):update(message) :: any) :: { [string]: () -> () })['hex']();
+    end 
+    return method
+end
+
+function createHmacOutputMethod(outputType, is224)
+    return function(key, message)
+        return ((hmacSha256.new(key, is224, true):update(message)::any)::{ [string]: () -> () })[outputType]()
+    end
+end
+
+function createHmacMethod(is224)
+    local method = { call = createHmacOutputMethod('hex', is224) }
+    method.create = function(key)
+        return hmacSha256.new(key, is224)
+    end
+    method.update = function(key, message)
+        return method.create(key):update(message)
+    end
+    method['hex'] = createHmacOutputMethod('hex', is224)
+    method['array'] = createHmacOutputMethod('array', is224)
+    method['hash'] = createHmacOutputMethod('hash', is224)
+
+    return method
+end
+
+return createMethod()
