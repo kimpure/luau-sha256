@@ -779,7 +779,7 @@ function createMethod(is224: boolean?): {
     return method
 end
 
-function createHmacOutputMethod(outputType, is224)
+function createHmacOutputMethod(outputType: "hash" | "array" | "hex", is224)
     return function(key, message)
         return ((hmacSha256.new(key, is224, true):update(message)::any)::{ [string]: () -> () })[outputType]()
     end
