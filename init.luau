@@ -31,27 +31,14 @@ export type Sha256 = typeof(setmetatable({} :: {
 }, {} :: Sha256Impl))
 
 
-local _16 = { 'A', 'B', 'C', 'D', 'E', 'F' };
 function from16(num: number): string
-    if num == 0 then return '0' end
-    local tab = {};
-    local result = '';
-    while true do
-        if num < 1 then
-            break
-        end
-        tab[#tab+1] = num % 16;
-        num -= num % 16
-        num /= 16;
-    end
-    for i=1, #tab do
-        local value = tab[i];
-        result = `{ if value > 9 then _16[value - 9] else value }{result}`
-    end
-    return result
+    return string.format("%X", num)  -- 대문자 16진수
 end
-function tonumber16(num: number): number
+function tonumber16(num: string): number
     return tonumber(num, 16) :: number
+end
+function n16(num: number): number
+    return tonumber16(from16(num))
 end
 
 local shift = { [0] = 24, 16, 8, 0 }
@@ -241,88 +228,28 @@ function sha256.hash(self)
     local blocks = self.blocks
     local j, s0, s1, maj, t1, t2, ch, ab, da, cd, bc
 
-    local t = { 
-        a = from16(a),
-        b = from16(b),
-        c = from16(c),
-        d = from16(d),
-        e = from16(e),
-        f = from16(f),
-        g = from16(g),
-        h = from16(h), 
-    }
-
     j = 16
     while j < 64 do
-        t1 = blocks[j-15]
-        s0 = bor(rshift(t1, 7), lshift(t1, 25)) ^ bor(rshift(t1, 18), lshift(t1, 14)) ^ rshift(t1, 3)
-        t1 = blocks[j - 2]
-        s1 = bor(rshift(t1, 17), lshift(t1, 15)) ^ bor(rshift(t1, 19), lshift(t1, 13)) ^ rshift(t1, 10)
-        blocks[j] = blocks[j - 16] + s0 + blocks[j - 7] + lshift(s1, 0)
+        
         j+=1
     end
 
-    bc = band(b, c)
     j = 0
     while j < 64 do
         if self.first then
             if self.is224 then
-                ab = 300032
-                t1 = blocks[0] - 1413257819
-                h = t1 - lshift(150054599, 0)
-                d = t1 + lshift(24177077, 0)
+                
             else
-                ab = 704751109
-                t1 = blocks[0] - 210244248
-                h = t1 - lshift(1521486534, 0)
-                d = t1 + lshift(143694565, 0)
+                
             end
             self.first = false
         else
-            s0 = bor(rshift(a, 2), lshift(a, 30)) ^ bor(rshift(a, 13), lshift(a, 19)) ^ bor(rshift(a, 22), lshift(a, 10))
-            s1 = bor(rshift(e, 6), lshift(e, 26)) ^ bor(rshift(e, 11), lshift(e, 21)) ^ bor(rshift(e, 25), lshift(e, 7))
-            ab = band(a, b)
-            maj = ab ^ band(a, c) ^ bc
-            ch = band(e, f) ^ band(bnot(e), g)
-            t1 = h + s1 + ch + k[j] + blocks[j]
-            t2 = s0 + maj
-            h = d + lshift(t1, 0)
-            d = t1 + lshift(t2, 0)
-        end
         
-        s0 = bor(rshift(d, 2), lshift(d, 30)) ^ bor(rshift(d, 13), lshift(d, 19)) ^ bor(rshift(d, 22), lshift(d, 10))
-        s1 = bor(rshift(h, 6), lshift(h, 26)) ^ bor(rshift(h, 11), lshift(h, 21)) ^ bor(rshift(h, 25), lshift(h, 7))
-        da = band(d, a)
-        maj = da ^ band(d, b) ^ ab
-        ch = band(h, e) ^ band(bnot(h), f)
-        t1 = g + s1 + ch + k[j + 1] + blocks[j + 1]
-        t2 = s0 + maj
-        g = c + lshift(t1, 0)
-        c = t1 + lshift(t2, 0)
-
-        s0 = bor(rshift(c, 2), lshift(c, 30)) ^ bor(rshift(c, 13), lshift(c, 19)) ^ bor(rshift(c, 22), lshift(c, 10))
-        s1 = bor(rshift(g, 6), lshift(g, 26)) ^ bor(rshift(g, 11), lshift(g, 21)) ^ bor(rshift(g, 25), lshift(g, 7))
-        cd = band(c, d)
-        maj = cd ^ band(c, a) ^ da
-        ch = band(g, h) ^ band(bnot(g), e)
-        t1 = f + s1 + ch + k[j + 2] + blocks[j + 2]
-        t2 = s0 + maj
-        f = b + lshift(t1, 0)
-        b = t1 + lshift(t2, 0)
-
-        s0 = bor(rshift(b, 2), lshift(b, 30)) ^ bor(rshift(b, 13), lshift(b, 19)) ^ bor(rshift(b, 22), lshift(b, 10))
-        s1 = bor(rshift(f, 6), lshift(f, 26)) ^ bor(rshift(f, 11), lshift(f, 21)) ^ bor(rshift(f, 25), lshift(f, 7))
-        bc = band(b, c)
-        maj = bc ^ band(b, d) ^ cd
-        ch = band(f, g) ^ band(bnot(f), h)
-        t1 = e + s1 + ch + k[j + 3] + blocks[j + 3]
-        t2 = s0 + maj
-        e = a + lshift(t1, 0)
-        a = t1 + lshift(t2, 0)
+        end
         
         j += 4
     end
-    
+
     self.h0 = self.h0 + lshift(a, 0)
     self.h1 = self.h1 + lshift(b, 0)
     self.h2 = self.h2 + lshift(c, 0)
