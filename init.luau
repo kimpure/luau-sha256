@@ -30,17 +30,6 @@ export type Sha256 = typeof(setmetatable({} :: {
     lastByteIndex: number?,
 }, {} :: Sha256Impl))
 
-
-function from16(num: number): string
-    return string.format("%X", num)  -- 대문자 16진수
-end
-function tonumber16(num: string): number
-    return tonumber(num, 16) :: number
-end
-function n16(num: number): number
-    return tonumber16(from16(num))
-end
-
 local shift = { [0] = 24, 16, 8, 0 }
 local extra = { [0] = -2147483648, 8388608, 32768, 128 }
 local hexChars = { [0]='0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' }
