@@ -30,6 +30,10 @@ export type Sha256 = typeof(setmetatable({} :: {
     lastByteIndex: number?,
 }, {} :: Sha256Impl))
 
+function from16(num: number): string
+    return string.format("%X", num)  -- 대문자 16진수
+end
+
 local shift = { [0] = 24, 16, 8, 0 }
 local extra = { [0] = -2147483648, 8388608, 32768, 128 }
 local hexChars = { [0]='0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' }
@@ -44,12 +48,13 @@ local k = {
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 } 
 
-local bor = bit32.bor
-local band = bit32.band
-local bnot = bit32.bnot
-local lshift = bit32.lshift
-local rshift = bit32.rshift
-local arshift = bit32.arshift
+local bit = bit32
+local bor = bit.bor
+local band = bit.band
+local bnot = bit.bnot
+local lshift = bit.lshift
+local rshift = bit.rshift
+local arshift = bit.arshift
 
 
 local sha256 = {} :: Sha256Impl
@@ -213,40 +218,142 @@ function sha256.finalize(self)
 end
 
 function sha256.hash(self)
-    local a, b, c, d, e, f, g, h = self.h0, self.h1, self.h2, self.h3, self.h4, self.h5, self.h6, self.h7
-    local blocks = self.blocks
-    local j, s0, s1, maj, t1, t2, ch, ab, da, cd, bc
-
-    j = 16
-    while j < 64 do
-        
-        j+=1
+    local function to_signed32(n)
+        if n >= 0 then
+            return n
+        else
+            return n + 4294967296
+        end
     end
 
-    j = 0
-    while j < 64 do
+    local a = self.h0
+    local b = self.h1
+    local c = self.h2
+    local d = self.h3
+    local e = self.h4
+    local f = self.h5
+    local g = self.h6
+    local h = self.h7
+    local blocks = self.blocks
+    local s0, s1, maj, t1, t2, ch, ab, bc
+    local cd , da
+
+    for j = 16, 63 do
+        t1 = blocks[j - 15]
+        s0 = bit.bxor(
+            bit.rrotate(t1, 7),
+            bit.rrotate(t1, 18),
+            bit.rshift(t1, 3)
+        )
+    
+        t1 = blocks[j - 2]
+        s1 = bit.bxor(
+            bit.rrotate(t1, 17),
+            bit.rrotate(t1, 19),
+            bit.rshift(t1, 10)
+        )
+        blocks[j] = (blocks[j - 16] + s0 + blocks[j - 7] + s1) % 4294967296
+    end
+    
+    bc = bit.band(b, c)
+    
+    for j = 0, 63, 4 do
         if self.first then
             if self.is224 then
-                
+                ab = 300032
+                t1 = blocks[0] - 1413257819
+                h = to_signed32(t1 - 150054599)
+                d = to_signed32(t1 + 24177077)
             else
-                
+                ab = 704751109
+                t1 = blocks[0] - 210244248
+                h = to_signed32(t1 - 1521486534)
+                d = to_signed32(t1 + 143694565)
             end
             self.first = false
         else
-        
+            s0 = bit.bxor(
+                bit.rrotate(a, 2),
+                bit.rrotate(a, 13),
+                bit.rrotate(a, 22)
+            )
+            s1 = bit.bxor(
+                bit.rrotate(e, 6),
+                bit.rrotate(e, 11),
+                bit.rrotate(e, 25)
+            )
+            ab = bit.band(a, b)
+            maj = bit.bxor(ab, bit.band(a, c), bc)
+            ch = bit.bxor(bit.band(e, f), bit.band(bit.bnot(e), g))
+            t1 = to_signed32(h + s1 + ch + k[j] + blocks[j])
+            t2 = s0 + maj
+            h = to_signed32(d + t1)
+            d = to_signed32(t1 + t2)
         end
+    
+        s0 = bit.bxor(
+            bit.rrotate(d, 2),
+            bit.rrotate(d, 13),
+            bit.rrotate(d, 22)
+        )
+        s1 = bit.bxor(
+            bit.rrotate(h, 6),
+            bit.rrotate(h, 11),
+            bit.rrotate(h, 25)
+        )
+        da = bit.band(d, a)
+        maj = bit.bxor(da, bit.band(d, b), ab)
+        ch = bit.bxor(bit.band(h, e), bit.band(bit.bnot(h), f))
+        t1 = to_signed32(g + s1 + ch + k[j + 1] + blocks[j + 1])
+        t2 = s0 + maj
+        g = to_signed32(c + t1)
+        c = to_signed32(t1 + t2)
         
-        j += 4
+        s0 = bit.bxor(
+            bit.rrotate(c, 2),
+            bit.rrotate(c, 13),
+            bit.rrotate(c, 22)
+        )
+        s1 = bit.bxor(
+            bit.rrotate(g, 6),
+            bit.rrotate(g, 11),
+            bit.rrotate(g, 25)
+        )
+        cd = bit.band(c, d)
+        maj = bit.bxor(cd, bit.band(c, a), da)
+        ch = bit.bxor(bit.band(g, h), bit.band(bit.bnot(g), e))
+        t1 = to_signed32(f + s1 + ch + k[j + 2] + blocks[j + 2])
+        t2 = s0 + maj
+        f = to_signed32(b + t1)
+        b = to_signed32(t1 + t2)
+    
+        s0 = bit.bxor(
+            bit.rrotate(b, 2),
+            bit.rrotate(b, 13),
+            bit.rrotate(b, 22)
+        )
+        s1 = bit.bxor(
+            bit.rrotate(f, 6),
+            bit.rrotate(f, 11),
+            bit.rrotate(f, 25)
+        )
+        bc = bit.band(b, c)
+        maj = bit.bxor(bc, bit.band(b, d), cd)
+        ch = bit.bxor(bit.band(f, g), bit.band(bit.bnot(f), h))
+        t1 = to_signed32(e + s1 + ch + k[j + 3] + blocks[j + 3])
+        t2 = s0 + maj
+        e = to_signed32(a + t1)
+        a = to_signed32(t1 + t2)
     end
-
-    self.h0 = self.h0 + lshift(a, 0)
-    self.h1 = self.h1 + lshift(b, 0)
-    self.h2 = self.h2 + lshift(c, 0)
-    self.h3 = self.h3 + lshift(d, 0)
-    self.h4 = self.h4 + lshift(e, 0)
-    self.h5 = self.h5 + lshift(f, 0)
-    self.h6 = self.h6 + lshift(g, 0)
-    self.h7 = self.h7 + lshift(h, 0)
+    
+    self.h0 = to_signed32(self.h0 + a)
+    self.h1 = to_signed32(self.h1 + b)
+    self.h2 = to_signed32(self.h2 + c)
+    self.h3 = to_signed32(self.h3 + d)
+    self.h4 = to_signed32(self.h4 + e)
+    self.h5 = to_signed32(self.h5 + f)
+    self.h6 = to_signed32(self.h6 + g)
+    self.h7 = to_signed32(self.h7 + h)
 end
 
 function sha256.array(self)
