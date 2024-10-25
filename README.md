@@ -11,6 +11,15 @@ submodule
 git submodule add https://github.com/kimpure/luau-sha256 lune-utf16
 ```
 
+## useage
+```luau
+--!strict
+local sha256 = require '../init'
+
+local n = sha256.new():update('test')
+print(n:hex())
+```
+
 ## how to use
 require
 ```luau
