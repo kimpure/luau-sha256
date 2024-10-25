@@ -30,10 +30,6 @@ export type Sha256 = typeof(setmetatable({} :: {
     lastByteIndex: number?,
 }, {} :: Sha256Impl))
 
-function from16(num: number): string
-    return string.format("%X", num)  -- 대문자 16진수
-end
-
 local shift = { [0] = 24, 16, 8, 0 }
 local extra = { [0] = -2147483648, 8388608, 32768, 128 }
 local hexChars = { [0]='0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' }
@@ -48,14 +44,13 @@ local k = {
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 } 
 
-local bit = bit32
-local bor = bit.bor
-local band = bit.band
-local bnot = bit.bnot
-local lshift = bit.lshift
-local rshift = bit.rshift
-local arshift = bit.arshift
-
+local bor = bit32.bor
+local band = bit32.band
+local rrotate = bit32.rrotate
+local bxor = bit32.bxor
+local lshift = bit32.lshift
+local rshift = bit32.rshift
+local bnot = bit32.bnot
 
 local sha256 = {} :: Sha256Impl
 sha256.__index = sha256
@@ -235,27 +230,26 @@ function sha256.hash(self)
     local g = self.h6
     local h = self.h7
     local blocks = self.blocks
-    local s0, s1, maj, t1, t2, ch, ab, bc
-    local cd , da
+    local s0, s1, maj, t1, t2, ch, ab, bc, cd , da
 
     for j = 16, 63 do
         t1 = blocks[j - 15]
-        s0 = bit.bxor(
-            bit.rrotate(t1, 7),
-            bit.rrotate(t1, 18),
-            bit.rshift(t1, 3)
+        s0 = bxor(
+            rrotate(t1, 7),
+            rrotate(t1, 18),
+            rshift(t1, 3)
         )
     
         t1 = blocks[j - 2]
-        s1 = bit.bxor(
-            bit.rrotate(t1, 17),
-            bit.rrotate(t1, 19),
-            bit.rshift(t1, 10)
+        s1 = bxor(
+            rrotate(t1, 17),
+            rrotate(t1, 19),
+            rshift(t1, 10)
         )
         blocks[j] = (blocks[j - 16] + s0 + blocks[j - 7] + s1) % 4294967296
     end
     
-    bc = bit.band(b, c)
+    bc = band(b, c)
     
     for j = 0, 63, 4 do
         if self.first then
@@ -272,74 +266,74 @@ function sha256.hash(self)
             end
             self.first = false
         else
-            s0 = bit.bxor(
-                bit.rrotate(a, 2),
-                bit.rrotate(a, 13),
-                bit.rrotate(a, 22)
+            s0 = bxor(
+                rrotate(a, 2),
+                rrotate(a, 13),
+                rrotate(a, 22)
             )
-            s1 = bit.bxor(
-                bit.rrotate(e, 6),
-                bit.rrotate(e, 11),
-                bit.rrotate(e, 25)
+            s1 = bxor(
+                rrotate(e, 6),
+                rrotate(e, 11),
+                rrotate(e, 25)
             )
-            ab = bit.band(a, b)
-            maj = bit.bxor(ab, bit.band(a, c), bc)
-            ch = bit.bxor(bit.band(e, f), bit.band(bit.bnot(e), g))
+            ab = band(a, b)
+            maj = bxor(ab, band(a, c), bc)
+            ch = bxor(band(e, f), band(bnot(e), g))
             t1 = to_signed32(h + s1 + ch + k[j] + blocks[j])
             t2 = s0 + maj
             h = to_signed32(d + t1)
             d = to_signed32(t1 + t2)
         end
     
-        s0 = bit.bxor(
-            bit.rrotate(d, 2),
-            bit.rrotate(d, 13),
-            bit.rrotate(d, 22)
+        s0 = bxor(
+            rrotate(d, 2),
+            rrotate(d, 13),
+            rrotate(d, 22)
         )
-        s1 = bit.bxor(
-            bit.rrotate(h, 6),
-            bit.rrotate(h, 11),
-            bit.rrotate(h, 25)
+        s1 = bxor(
+            rrotate(h, 6),
+            rrotate(h, 11),
+            rrotate(h, 25)
         )
-        da = bit.band(d, a)
-        maj = bit.bxor(da, bit.band(d, b), ab)
-        ch = bit.bxor(bit.band(h, e), bit.band(bit.bnot(h), f))
+        da = band(d, a)
+        maj = bxor(da, band(d, b), ab)
+        ch = bxor(band(h, e), band(bnot(h), f))
         t1 = to_signed32(g + s1 + ch + k[j + 1] + blocks[j + 1])
         t2 = s0 + maj
         g = to_signed32(c + t1)
         c = to_signed32(t1 + t2)
         
-        s0 = bit.bxor(
-            bit.rrotate(c, 2),
-            bit.rrotate(c, 13),
-            bit.rrotate(c, 22)
+        s0 = bxor(
+            rrotate(c, 2),
+            rrotate(c, 13),
+            rrotate(c, 22)
         )
-        s1 = bit.bxor(
-            bit.rrotate(g, 6),
-            bit.rrotate(g, 11),
-            bit.rrotate(g, 25)
+        s1 = bxor(
+            rrotate(g, 6),
+            rrotate(g, 11),
+            rrotate(g, 25)
         )
-        cd = bit.band(c, d)
-        maj = bit.bxor(cd, bit.band(c, a), da)
-        ch = bit.bxor(bit.band(g, h), bit.band(bit.bnot(g), e))
+        cd = band(c, d)
+        maj = bxor(cd, band(c, a), da)
+        ch = bxor(band(g, h), band(bnot(g), e))
         t1 = to_signed32(f + s1 + ch + k[j + 2] + blocks[j + 2])
         t2 = s0 + maj
         f = to_signed32(b + t1)
         b = to_signed32(t1 + t2)
     
-        s0 = bit.bxor(
-            bit.rrotate(b, 2),
-            bit.rrotate(b, 13),
-            bit.rrotate(b, 22)
+        s0 = bxor(
+            rrotate(b, 2),
+            rrotate(b, 13),
+            rrotate(b, 22)
         )
-        s1 = bit.bxor(
-            bit.rrotate(f, 6),
-            bit.rrotate(f, 11),
-            bit.rrotate(f, 25)
+        s1 = bxor(
+            rrotate(f, 6),
+            rrotate(f, 11),
+            rrotate(f, 25)
         )
-        bc = bit.band(b, c)
-        maj = bit.bxor(bc, bit.band(b, d), cd)
-        ch = bit.bxor(bit.band(f, g), bit.band(bit.bnot(f), h))
+        bc = band(b, c)
+        maj = bxor(bc, band(b, d), cd)
+        ch = bxor(band(f, g), band(bnot(f), h))
         t1 = to_signed32(e + s1 + ch + k[j + 3] + blocks[j + 3])
         t2 = s0 + maj
         e = to_signed32(a + t1)
