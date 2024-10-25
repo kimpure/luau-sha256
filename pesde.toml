@@ -1,0 +1,14 @@
+name = "kimpure/sha256"
+version = "0.1.0"
+description = "luau-sha256 is a library for using sha256 in luau."
+authors = ["sunwoo"]
+repository = "https://github.com/kimpure/luau-sha256"
+license = "MIT"
+includes = ["README.md"]
+
+[target]
+environment = "luau"
+lib = "init.luau"
+
+[indices]
+default = "https://github.com/daimond113/pesde-index"

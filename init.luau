@@ -2,7 +2,7 @@
 type Sha256Impl = {
     __index: Sha256Impl,
     new: (is224: boolean?, sharedMemory: boolean?) -> Sha256,
-    update: (self: Sha256, message: string | { [any]: any }) -> Sha256?,
+    update: (self: Sha256, message: string | { [any]: any }) -> Sha256,
     hash: (self: Sha256) -> (),
     finalize: (self: Sha256) -> (),
     array: (self: Sha256) -> { [number]: number },
@@ -102,7 +102,7 @@ end
 
 function sha256.update(self, message)
     if self.finalized then 
-        return
+        return self
     end
 
     local code, i
@@ -135,27 +135,27 @@ function sha256.update(self, message)
                     blocks[rshift(i, 2)] = lshift(code, shift[band(i, 3)])
                     i+=1
                 elseif code < 0x800 then
-                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift( bor(0xc0, rshift(code, 6)), shift[band(i, 3)]))
+                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift(bor(0xc0, rshift(code, 6)), shift[band(i, 3)]))
                     i+=1
-                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift( bor(0x80, band(code, 0x3f)), shift[band(i, 3)]))
+                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift(bor(0x80, band(code, 0x3f)), shift[band(i, 3)]))
                     i+=1
                 elseif code < 0xd800 or code >= 0xe000 then
-                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift( bor(0xe0, rshift(code, 12)), shift[band(i, 3)]))
+                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift(bor(0xe0, rshift(code, 12)), shift[band(i, 3)]))
                     i+=1
                     blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift(bor(0x80, band(rshift(code, 6), 0x3f)), shift[band(i, 3)]))
                     i+=1
-                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift( bor(0x80, band(code, 0x3f)), shift[band(i, 3)]))
+                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift(bor(0x80, band(code, 0x3f)), shift[band(i, 3)]))
                     i+=1
                 else
                     code = 0x10000 + bor(lshift(band(code, 0x3ff), 10), band( message:byte(index+1), 0x3ff))
                     i+=1
-                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift( bor(0xf0, rshift(code, 18)), shift[band(i, 3)]))
+                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift(bor(0xf0, rshift(code, 18)), shift[band(i, 3)]))
                     i+=1
                     blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift(bor(0x80, band(rshift(code, 12), 0x3f)), shift[band(i, 3)]))
                     i+=1
                     blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift(bor(0x80, band(rshift(code, 6), 0x3f)), shift[band(i, 3)]))
                     i+=1
-                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift( bor(0x80, band(code, 0x3f)), shift[band(i, 3)]))
+                    blocks[rshift(i, 2)] = bor(blocks[rshift(i, 2)], lshift(bor(0x80, band(code, 0x3f)), shift[band(i, 3)]))
                     i+=1
                 end
                 index+=1
